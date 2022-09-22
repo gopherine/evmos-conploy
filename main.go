@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -27,6 +28,7 @@ func main() {
 	_ = client
 
 	// Creating a CLI app with flags and actions.
+	// refer makefile on how to manually trigger these flags
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
@@ -42,12 +44,12 @@ func main() {
 			&cli.BoolFlag{
 				Name:    "read",
 				Aliases: []string{"r"},
-				Usage:   "Read smart contract info",
+				Usage:   "Read smart contract info: Exec with `make read`",
 			},
 			&cli.BoolFlag{
 				Name:    "transact",
 				Aliases: []string{"t"},
-				Usage:   "Read smart contract info",
+				Usage:   `Transfer tokens from one address to other`,
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
@@ -58,7 +60,11 @@ func main() {
 			} else if cCtx.Bool("read") {
 				log.Print("Will read from contract some basic functions to check balance and symbol")
 			} else if cCtx.Bool("transact") {
-				log.Print("Will transfer tokens from one address to other")
+				if cCtx.NArg() > 1 {
+					log.Print("Will transfer tokens from one address to other", cCtx.Args().Get(0), cCtx.Args().Get(1))
+				} else {
+					log.Fatal().Err(errors.New("Need more arguments, in the format make run fromAddress toAddress")).Msg("transaction failed")
+				}
 			}
 
 			return nil
