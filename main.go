@@ -8,6 +8,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
+
+	"github.com/gopherine/evmos-conploy/contract"
 )
 
 func main() {
@@ -25,7 +27,8 @@ func main() {
 		log.Info().Msg("Client connection successful")
 	}
 
-	_ = client
+	// initialize deploy contract module
+	c := contract.NewContract(client)
 
 	// Creating a CLI app with flags and actions.
 	// refer makefile on how to manually trigger these flags
@@ -54,7 +57,12 @@ func main() {
 		},
 		Action: func(cCtx *cli.Context) error {
 			if cCtx.Bool("deploy") {
-				log.Print("will contain logic for deploying")
+				_, addrHash, txHash, err := c.Deploy()
+				if err != nil {
+					log.Fatal().Err(err).Msg("Unable to deploy")
+				}
+				log.Info().Msgf("Address: %s", addrHash)
+				log.Info().Msgf("TXHash: ", txHash)
 			} else if cCtx.Bool("check") {
 				log.Print("Will call and check reciept to confirm deployment")
 			} else if cCtx.Bool("read") {

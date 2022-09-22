@@ -1,6 +1,8 @@
+# gets private key from local client
+OWNER_PRIVATEKEY:=$(shell evmosd keys unsafe-export-eth-key mykey --keyring-backend=test)
 # .env.template is a placeholder for env variables
 envgen:
-	- cat .env.template > .env
+	- cat .env.template | sed -e "s/\OWNER_PRIVATEKEY_/${OWNER_PRIVATEKEY}/" > .env
 
 # generate abi, bin and gofile
 generate-abi:
@@ -24,3 +26,14 @@ read:
 	- ./bin/conploy -r
 transact:
 	- ./bin/conploy -t $(from) $(to)
+
+# generate mocks
+# contract mock
+contract-mock:
+	- mockgen -package contract -destination contract/contract_mock.go -source contract/contract.go
+test-table:
+	- go test -v -run ^TestTableSuite$$ ./...
+test-bdd:
+	- go test -v -run ^TestSrc$$ ./...
+test:
+	- go test -v ./...

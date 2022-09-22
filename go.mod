@@ -4,10 +4,12 @@ go 1.19
 
 require (
 	github.com/ethereum/go-ethereum v1.10.25
+	github.com/golang/mock v1.6.0
 	github.com/joho/godotenv v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.2
 	github.com/rs/zerolog v1.28.0
+	github.com/stretchr/testify v1.7.2
 	github.com/urfave/cli/v2 v2.16.3
 )
 
@@ -17,6 +19,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
@@ -36,6 +39,7 @@ require (
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/tsdb v0.7.1 // indirect
 	github.com/rjeczalik/notify v0.9.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect

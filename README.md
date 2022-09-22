@@ -59,5 +59,25 @@ make transact from=FROMADDRESS to=RECIEVER_ADDRESS
 
 ## Testing
 
+We are unit testing using two different patterns i.e Table Driven Tests and Behaviour Driven Tests.
+Each of the respective tests are being implemented within their own suites to make it easier to
+differentiate and make tests more readable.
+
+To run table driven tests
+```
+make test-table
+```
+
+To run BDD tests
+```
+make test-bdd
+```
+
+Alternatively, if you would like to run both the tests simultaneously you can run that simply
+by `go test -v ./...` or using make
+```
+make test
+```
+
 ## To Do
 
