@@ -28,8 +28,34 @@ we are currently using go-ethereum, but this should adapt to other libraries in 
     * https://golangci-lint.run/usage/install/ (linter installation)
     * `go install github.com/golang/mock/mockgen@v1.6.0`
         - please check `$GOPATH/go/bin` is updated on your .zshrc or .bashrc file in the path, this will enable us to generate mocks
-
 ## Usage
+.env.template is a placeholder for env variables, this command will generate .env
+```
+make envgen
+```
+
+To generate abi, bin and gofile run the below make commands respectively
+```
+make generate-abi
+make generate-bin contract=goldcoin
+make generate-go contract=goldcoin
+```
+
+Build program with `make build` and then trigger cli functions to deploy, check , read or transact and interact
+with smartcontracts. Use the below command. The make command is just for
+convinience here. If you would like to build and trigger manually you can
+do that as well.
+
+```
+# Deploy contract
+make deploy
+# Check if the contract is deployed successfully
+make check
+# Query smart contract
+make read
+# Transact tokens from owner_address to reciever_address
+make transact from=FROMADDRESS to=RECIEVER_ADDRESS
+```
 
 ## Testing
 

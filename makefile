@@ -1,14 +1,26 @@
 # .env.template is a placeholder for env variables
 envgen:
 	- cat .env.template > .env
+
+# generate abi, bin and gofile
+generate-abi:
+	- solc --abi --include-path solidity-contracts/node_modules/ --base-path . solidity-contracts/$(contract).sol -o abi
+generate-bin:
+	- solc --bin --include-path solidity-contracts/node_modules/ --base-path . solidity-contracts/$(contract).sol -o bin
+generate-go:
+	- mkdir $(contract)
+	- abigen --abi=abi/$(contract).abi --bin=bin/$(contract).bin --pkg=goldcoin --out=goldcoin/$(contract).go
+
+# build application
+build:
+	- go build -o bin/conploy
+
 # run cli app
 deploy:
-	- go run main.go -d
+	- ./bin/conploy -d
 check:
-	- go run main.go -c
+	- ./bin/conploy -c
 read:
-	- go run main.go -r
-
-.PHONY: transact
+	- ./bin/conploy -r
 transact:
-	- go run main.go -t $(from) $(to)
+	- ./bin/conploy -t $(from) $(to)
