@@ -1,5 +1,5 @@
 # evmos-conploy
-This is a CLI app to deploy smart-contracts on evmos node, and keep track of the contracts deployed.
+A CLI app to deploy smart-contracts on evmos node, and keep track of the contracts deployed.
 
 ## Table of Contents
 * [Description](#description)
@@ -27,7 +27,7 @@ we are currently using go-ethereum, but this should adapt to other libraries in 
         - install ethereum, this will provide us with tools like abigen and solc to compile solidity and generate go files, abi and bin
     * https://golangci-lint.run/usage/install/ (linter installation)
     * `go install github.com/golang/mock/mockgen@v1.6.0`
-        - please check `$GOPATH/go/bin` is updated on your .zshrc or .bashrc file in the path, this will enable to generate mocks
+        - please check `$GOPATH/go/bin` is updated on your .zshrc or .bashrc file in the path, this will enable us to generate mocks
 
 ## Usage
 
