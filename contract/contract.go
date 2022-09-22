@@ -76,6 +76,15 @@ type IBlockchain interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 }
 
+// Defining the interface for the goldcoin contract.
+type IGoldcoin interface {
+	// Symbol is a free data retrieval call binding the contract method 0x95d89b41.
+	Symbol(opts *bind.CallOpts) (string, error)
+	// 	BalanceOf is a free data retrieval call binding the contract method 0x70a08231.
+	// Solidity: function balanceOf(address account) view returns(uint256)
+	BalanceOf(opts *bind.CallOpts, account common.Address) (*big.Int, error)
+}
+
 // > The function `NewContract` takes an interface `IBlockchain` as an argument and returns a pointer
 // to a `Contract` struct
 func NewContract(c IBlockchain) *Contract {
@@ -100,6 +109,53 @@ func (c *Contract) Deploy() (instance *goldcoin.Goldcoin, addrHash string, txHas
 
 	// TODO: this return is here only for testing purpose or if it needs to be used globally somehow, eventually needs to be removed or refactored
 	return instance, address.Hex(), tx.Hash().Hex(), nil
+}
+
+// This function is reading the contract data from the blockchain.
+func (c *Contract) Read(instance IGoldcoin) (string, *big.Int, error) {
+	privateKey, err := crypto.HexToECDSA(os.Getenv("OWNER_PRIVATEKEY"))
+	if err != nil {
+		log.Err(err).Msg("Unable to process privatekey from HEX to ECDSA")
+		return "", nil, err
+	}
+
+	symbol, err := instance.Symbol(&bind.CallOpts{})
+	if err != nil {
+		log.Err(err).Msg("Unable to get symbol")
+		return "", nil, err
+	}
+
+	address := crypto.PubkeyToAddress(privateKey.PublicKey)
+
+	bal, err := instance.BalanceOf(&bind.CallOpts{}, address)
+	if err != nil {
+		log.Err(err).Msg("unable to get balance")
+		return "", nil, err
+	}
+
+	return symbol, bal, nil
+}
+
+// This function is loading the contract from the blockchain.
+func (c *Contract) Load() *goldcoin.Goldcoin {
+	address := common.HexToAddress((os.Getenv("CONTRACT_ADDRESS")))
+	instance, _ := goldcoin.NewGoldcoin(address, c.Client)
+	log.Info().Msg("contract is loaded")
+	return instance
+}
+
+// This function is reading the contract data from the blockchain.
+func (c *Contract) Reciept() (*types.Receipt, error) {
+	txHashHex := os.Getenv("CONTRACT_HASH")
+	txHash := common.HexToHash(txHashHex)
+
+	reciept, err := c.Client.TransactionReceipt(context.Background(), txHash)
+	if err != nil {
+		log.Err(err).Msg("reciept not recieved, contract was not deployed")
+		return nil, err
+	}
+
+	return reciept, nil
 }
 
 // This function is creating a transaction signer.

@@ -20,7 +20,7 @@ we are currently using go-ethereum, but this should adapt to other libraries in 
     * https://ethereum.org/en/developers/docs/programming-languages/golang/
     * https://pkg.go.dev/github.com/ethereum/go-ethereum
 
-- **INSTALLATION**
+- **PREREQUISITE**
     * https://docs.evmos.org/validators/quickstart/installation.html
         - I have built the node locally, but you may try to build it via docker, once built run ./init.sh to initialize the node
     * https://geth.ethereum.org/docs/install-and-build/installing-geth
@@ -45,6 +45,9 @@ Build program with `make build` and then trigger cli functions to deploy, check 
 with smartcontracts. Use the below command. The make command is just for
 convinience here. If you would like to build and trigger manually you can
 do that as well.
+
+NOTE: After deployment you will get TxHash and Address for the contract that was deployed on the chain, for now we are not
+having any method to persist those.Thus, save it in .env under CONTRACT_HASH and CONTRACT_HASH respectively.
 
 ```
 # Deploy contract

@@ -7,6 +7,7 @@ package contract
 import (
 	context "context"
 	go_ethereum "github.com/ethereum/go-ethereum"
+	bind "github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common "github.com/ethereum/go-ethereum/common"
 	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
@@ -275,4 +276,57 @@ func (m *MockIBlockchain) HeaderByNumber(ctx context.Context, number *big.Int) (
 func (mr *MockIBlockchainMockRecorder) HeaderByNumber(ctx, number interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeaderByNumber", reflect.TypeOf((*MockIBlockchain)(nil).HeaderByNumber), ctx, number)
+}
+
+// MockIGoldcoin is a mock of IGoldcoin interface
+type MockIGoldcoin struct {
+	ctrl     *gomock.Controller
+	recorder *MockIGoldcoinMockRecorder
+}
+
+// MockIGoldcoinMockRecorder is the mock recorder for MockIGoldcoin
+type MockIGoldcoinMockRecorder struct {
+	mock *MockIGoldcoin
+}
+
+// NewMockIGoldcoin creates a new mock instance
+func NewMockIGoldcoin(ctrl *gomock.Controller) *MockIGoldcoin {
+	mock := &MockIGoldcoin{ctrl: ctrl}
+	mock.recorder = &MockIGoldcoinMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockIGoldcoin) EXPECT() *MockIGoldcoinMockRecorder {
+	return m.recorder
+}
+
+// Symbol mocks base method
+func (m *MockIGoldcoin) Symbol(opts *bind.CallOpts) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Symbol", opts)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Symbol indicates an expected call of Symbol
+func (mr *MockIGoldcoinMockRecorder) Symbol(opts interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Symbol", reflect.TypeOf((*MockIGoldcoin)(nil).Symbol), opts)
+}
+
+// BalanceOf mocks base method
+func (m *MockIGoldcoin) BalanceOf(opts *bind.CallOpts, account common.Address) (*big.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BalanceOf", opts, account)
+	ret0, _ := ret[0].(*big.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BalanceOf indicates an expected call of BalanceOf
+func (mr *MockIGoldcoinMockRecorder) BalanceOf(opts, account interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalanceOf", reflect.TypeOf((*MockIGoldcoin)(nil).BalanceOf), opts, account)
 }

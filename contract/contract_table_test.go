@@ -149,3 +149,90 @@ func (ts *TableSuite) TestDeploy() {
 		})
 	}
 }
+
+// A test function that tests the `Read` function.
+func (ts *TableSuite) TestRead() {
+	// Setting a mock environment variable for testing.
+	os.Setenv("OWNER_PRIVATEKEY", "b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	defer os.Unsetenv("OWNER_PRIVATEKEY")
+
+	subtests := []struct {
+		name    string
+		prepare func(m *contract.MockIGoldcoin)
+		wantErr bool
+	}{
+		{
+			name: "Read from instance and get symbol and balance",
+			prepare: func(m *contract.MockIGoldcoin) {
+				m.EXPECT().Symbol(&bind.CallOpts{}).Return("GLD", nil)
+				m.EXPECT().BalanceOf(&bind.CallOpts{}, testAddr).Return(testBalance, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error Symbol",
+			prepare: func(m *contract.MockIGoldcoin) {
+				m.EXPECT().Symbol(&bind.CallOpts{}).Return("", errors.New("error"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error Balanceof",
+			prepare: func(m *contract.MockIGoldcoin) {
+				m.EXPECT().Symbol(&bind.CallOpts{}).Return("GLD", nil)
+				m.EXPECT().BalanceOf(&bind.CallOpts{}, testAddr).Return(nil, errors.New("error"))
+			},
+			wantErr: true,
+		}, {
+			name: "Error Invalid Privatekey",
+			prepare: func(m *contract.MockIGoldcoin) {
+				os.Setenv("OWNER_PRIVATEKEY", "INVALID_KEY")
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range subtests {
+		ts.Run(tt.name, func() {
+			// Creating a mock instance of the `IGoldcoin` interface.
+			instanceMock := contract.NewMockIGoldcoin(ts.Ctrl)
+			if tt.prepare != nil {
+				// m.Expect expects only successful calls any subsequent calls post a returning error will panic
+				// hence this functions helps in presetting such explicit requirement for each edgecase
+				tt.prepare(instanceMock)
+			}
+
+			symbol, bal, err := ts.Contract.Read(instanceMock)
+
+			if (err != nil) != tt.wantErr {
+				ts.Errorf(err, "Expected error got nil")
+			} else if !tt.wantErr {
+				assert.Equal(ts.T(), "GLD", symbol)
+				assert.True(ts.T(), bal.Cmp(testBalance) == 0)
+			}
+		})
+	}
+}
+
+// A test function that tests the `Load` function.
+func (ts *TableSuite) TestLoad() {
+	subtests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{
+			name:    "Loads goldcoin instance",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range subtests {
+		ts.Run(tt.name, func() {
+			os.Setenv("CONTRACT_ADDRESS", testAddr.Hex())
+			defer os.Unsetenv("CONTRACT_ADDRESS")
+
+			instance := ts.Contract.Load()
+			assert.NotNil(ts.T(), instance)
+		})
+	}
+}

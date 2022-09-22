@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -26,7 +27,7 @@ var _ = Describe("Testing Contract", func() {
 	var (
 		// Creating a mock instance of the `IBlockchain` interface.
 		clientMock = contract.NewMockIBlockchain(ctrl)
-		contract   = contract.NewContract(clientMock)
+		c          = contract.NewContract(clientMock)
 	)
 
 	Context("Test Deploy function", func() {
@@ -37,7 +38,7 @@ var _ = Describe("Testing Contract", func() {
 			clientMock.EXPECT().EstimateGas(context.Background(), gomock.Any()).Return(uint64(100), nil)
 			clientMock.EXPECT().SendTransaction(context.Background(), gomock.Any()).Return(nil)
 
-			instance, addrHash, txHash, err := contract.Deploy()
+			instance, addrHash, txHash, err := c.Deploy()
 
 			Expect(err).To(BeNil())
 			Expect(instance).ToNot(BeNil())
@@ -47,11 +48,38 @@ var _ = Describe("Testing Contract", func() {
 
 		It("Check Error while getting Chain ID", func() {
 			clientMock.EXPECT().ChainID(context.Background()).Return(nil, errors.New("chain id error"))
-			_, _, _, err := contract.Deploy()
+			_, _, _, err := c.Deploy()
 
 			Expect(err).ToNot(BeNil())
 			Expect(err).Error().To(Equal(errors.New("chain id error")))
 		})
+	})
 
+	Context("Test Read function", func() {
+		var instanceMock *contract.MockIGoldcoin
+		//TODO: at this point this is not really needed implementing just for testing purpose
+		BeforeEach(func() {
+			// Creating a mock instance of the `IGoldcoin` interface.
+			instanceMock = contract.NewMockIGoldcoin(ctrl)
+		})
+
+		It("Check successful execution of Read function", func() {
+			instanceMock.EXPECT().Symbol(&bind.CallOpts{}).Return("GLD", nil)
+			instanceMock.EXPECT().BalanceOf(&bind.CallOpts{}, testAddr).Return(testBalance, nil)
+
+			symbol, bal, err := c.Read(instanceMock)
+
+			balCheck := bal.Cmp(testBalance)
+			Expect(err).To(BeNil())
+			Expect(symbol).To(Equal("GLD"))
+			Expect(balCheck).To(Equal(0))
+		})
+
+		It("Check Error getting Symbol", func() {
+			instanceMock.EXPECT().Symbol(&bind.CallOpts{}).Return("", errors.New("error"))
+			_, _, err := c.Read(instanceMock)
+
+			Expect(err).ToNot(BeNil())
+		})
 	})
 })

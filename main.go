@@ -64,9 +64,19 @@ func main() {
 				log.Info().Msgf("Address: %s", addrHash)
 				log.Info().Msgf("TXHash: ", txHash)
 			} else if cCtx.Bool("check") {
-				log.Print("Will call and check reciept to confirm deployment")
+				reciept, err := c.Reciept()
+				if err != nil {
+					log.Fatal().Err(err).Msg("Unable to get reciept")
+				}
+				log.Info().Msgf("Reciept: %v", reciept)
 			} else if cCtx.Bool("read") {
-				log.Print("Will read from contract some basic functions to check balance and symbol")
+				instance := c.Load()
+				symbol, bal, err := c.Read(instance)
+				if err != nil {
+					log.Fatal().Err(err).Msg("Unable to Read from contract")
+				}
+				log.Info().Msgf("Balance: %v", bal)
+				log.Info().Msgf("Symbol: %s", symbol)
 			} else if cCtx.Bool("transact") {
 				if cCtx.NArg() > 1 {
 					log.Print("Will transfer tokens from one address to other", cCtx.Args().Get(0), cCtx.Args().Get(1))
