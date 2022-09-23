@@ -85,7 +85,7 @@ make test
 
 ## To Do
 
-[] Refactor tests, add more bdd test cases currently only important testcases are covered
-[] Add a persistant storage to keep track of contract address and txhash
-[] Have a way to manually create and generate validator address with given private key, this will ensure consistency when the node restarts
-[] currently with simulated backend we do not test all the generated functions, ensure most of the key functions are tested.
+- [ ] Refactor tests, add more bdd test cases currently only important testcases are covered
+- [ ] Add a persistant storage to keep track of contract address and txhash
+- [ ] Have a way to manually create and generate validator address with given private key, this will ensure consistency when the node restarts
+- [ ] currently with simulated backend we do not test all the generated functions, ensure most of the key functions are tested.
