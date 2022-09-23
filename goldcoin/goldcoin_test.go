@@ -32,7 +32,7 @@ func TestSrc(t *testing.T) {
 	RunSpecs(t, "Shared Suite")
 }
 
-// Test ERC20 contract deployment
+// Test ERC20 contract deployment and tx
 var _ = Describe("Deploy Contracts", func() {
 	auth, _ := bind.NewKeyedTransactorWithChainID(testKey, big.NewInt(1337))
 	balance := new(big.Int).Mul(big.NewInt(999999999999999), big.NewInt(999999999999999))

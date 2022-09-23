@@ -89,3 +89,4 @@ make test
 - [ ] Add a persistant storage to keep track of contract address and txhash
 - [ ] Have a way to manually create and generate validator address with given private key, this will ensure consistency when the node restarts
 - [ ] currently with simulated backend we do not test all the generated functions, ensure most of the key functions are tested.
+- [ ] https://github.com/golangci/golangci-lint/issues/3107 -- known issue , currently there seems to be some issue with the linter, need to find a workaround
