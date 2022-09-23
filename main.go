@@ -29,7 +29,8 @@ func main() {
 
 	// initialize deploy contract module
 	c := contract.NewContract(client)
-
+	// goldcoin contract instance
+	instance := c.Load()
 	// Creating a CLI app with flags and actions.
 	// refer makefile on how to manually trigger these flags
 	app := &cli.App{
@@ -40,19 +41,19 @@ func main() {
 				Usage:   "Deploy smart contract",
 			},
 			&cli.BoolFlag{
-				Name:    "check",
-				Aliases: []string{"c"},
-				Usage:   "Check if smart contract is deployed",
-			},
-			&cli.BoolFlag{
-				Name:    "read",
+				Name:    "reciept",
 				Aliases: []string{"r"},
-				Usage:   "Read smart contract info: Exec with `make read`",
+				Usage:   "Check if smart contract is deployed",
 			},
 			&cli.BoolFlag{
 				Name:    "transact",
 				Aliases: []string{"t"},
-				Usage:   `Transfer tokens from one address to other`,
+				Usage:   "Transfer tokens from one address to other",
+			},
+			&cli.BoolFlag{
+				Name:    "balanceOf",
+				Aliases: []string{"b"},
+				Usage:   "Check balance of given address",
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
@@ -63,25 +64,38 @@ func main() {
 				}
 				log.Info().Msgf("Address: %s", addrHash)
 				log.Info().Msgf("TXHash: ", txHash)
-			} else if cCtx.Bool("check") {
+			} else if cCtx.Bool("reciept") {
 				reciept, err := c.Reciept()
 				if err != nil {
 					log.Fatal().Err(err).Msg("Unable to get reciept")
 				}
 				log.Info().Msgf("Reciept: %v", reciept)
-			} else if cCtx.Bool("read") {
-				instance := c.Load()
-				symbol, bal, err := c.Read(instance)
-				if err != nil {
-					log.Fatal().Err(err).Msg("Unable to Read from contract")
-				}
-				log.Info().Msgf("Balance: %v", bal)
-				log.Info().Msgf("Symbol: %s", symbol)
 			} else if cCtx.Bool("transact") {
 				if cCtx.NArg() > 1 {
-					log.Print("Will transfer tokens from one address to other", cCtx.Args().Get(0), cCtx.Args().Get(1))
+					tx, err := c.TransferTokens(instance, cCtx.Args().Get(1) /*address*/, cCtx.Args().Get(0) /*amount*/)
+					if err != nil {
+						log.Fatal().Err(err).Msg("Transaction failed")
+					}
+
+					log.Info().Msgf("TXHash: %v", tx.Hash().String())
 				} else {
 					log.Fatal().Err(errors.New("Need more arguments, in the format make run fromAddress toAddress")).Msg("transaction failed")
+				}
+			} else if cCtx.Bool("balanceOf") {
+				if cCtx.NArg() > 0 {
+					bal, err := c.CheckBal(instance, cCtx.Args().Get(0))
+					if err != nil {
+						log.Fatal().Err(err).Msg("Unable to get balance")
+					}
+
+					log.Info().Msgf("Balance: %v", bal)
+				} else {
+					bal, err := c.CheckBal(instance, "")
+					if err != nil {
+						log.Fatal().Err(err).Msg("Unable to get balance")
+					}
+
+					log.Info().Msgf("Balance: %v", bal)
 				}
 			}
 

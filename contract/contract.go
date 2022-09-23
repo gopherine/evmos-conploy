@@ -2,6 +2,7 @@ package contract
 
 import (
 	"context"
+	"errors"
 	"math/big"
 	"os"
 
@@ -78,8 +79,7 @@ type IBlockchain interface {
 
 // Defining the interface for the goldcoin contract.
 type IGoldcoin interface {
-	// Symbol is a free data retrieval call binding the contract method 0x95d89b41.
-	Symbol(opts *bind.CallOpts) (string, error)
+	Transfer(opts *bind.TransactOpts, to common.Address, amount *big.Int) (*types.Transaction, error)
 	// 	BalanceOf is a free data retrieval call binding the contract method 0x70a08231.
 	// Solidity: function balanceOf(address account) view returns(uint256)
 	BalanceOf(opts *bind.CallOpts, account common.Address) (*big.Int, error)
@@ -111,31 +111,6 @@ func (c *Contract) Deploy() (instance *goldcoin.Goldcoin, addrHash string, txHas
 	return instance, address.Hex(), tx.Hash().Hex(), nil
 }
 
-// This function is reading the contract data from the blockchain.
-func (c *Contract) Read(instance IGoldcoin) (string, *big.Int, error) {
-	privateKey, err := crypto.HexToECDSA(os.Getenv("OWNER_PRIVATEKEY"))
-	if err != nil {
-		log.Err(err).Msg("Unable to process privatekey from HEX to ECDSA")
-		return "", nil, err
-	}
-
-	symbol, err := instance.Symbol(&bind.CallOpts{})
-	if err != nil {
-		log.Err(err).Msg("Unable to get symbol")
-		return "", nil, err
-	}
-
-	address := crypto.PubkeyToAddress(privateKey.PublicKey)
-
-	bal, err := instance.BalanceOf(&bind.CallOpts{}, address)
-	if err != nil {
-		log.Err(err).Msg("unable to get balance")
-		return "", nil, err
-	}
-
-	return symbol, bal, nil
-}
-
 // This function is loading the contract from the blockchain.
 func (c *Contract) Load() *goldcoin.Goldcoin {
 	address := common.HexToAddress((os.Getenv("CONTRACT_ADDRESS")))
@@ -156,6 +131,49 @@ func (c *Contract) Reciept() (*types.Receipt, error) {
 	}
 
 	return reciept, nil
+}
+
+// Transfer tokens from owner address to reciever address
+func (c *Contract) TransferTokens(instance IGoldcoin, recieverAddr string, amountStr string) (*types.Transaction, error) {
+	auth, err := c.getTxSigner()
+	if err != nil {
+		return nil, err
+	}
+
+	if amount, ok := new(big.Int).SetString(amountStr, 10); ok {
+		// This is a function that is defined in the contract to transfer tokens from owner address to
+		// reciever address.
+		tx, err := instance.Transfer(auth, common.HexToAddress(recieverAddr), amount)
+		if err != nil {
+			log.Err(err).Msg("unable to make transaction")
+			return nil, err
+		}
+		return tx, nil
+	}
+	return nil, errors.New("Please check amount, something went wrong")
+}
+
+// Checkbal function accepts hex string and returns balance in wei
+func (c *Contract) CheckBal(instance IGoldcoin, address string) (*big.Int, error) {
+	addr := common.HexToAddress(address)
+	if address == "" {
+		privateKey, err := crypto.HexToECDSA(os.Getenv("OWNER_PRIVATEKEY"))
+		if err != nil {
+			log.Err(err).Msg("Unable to process privatekey from HEX to ECDSA")
+			return nil, err
+		}
+
+		addr = crypto.PubkeyToAddress(privateKey.PublicKey)
+	}
+
+	// This is a function that is defined in the contract to get balance for given address
+	bal, err := instance.BalanceOf(&bind.CallOpts{}, addr)
+	if err != nil {
+		log.Err(err).Msg("unable to get owner balance")
+		return nil, err
+	}
+
+	return bal, nil
 }
 
 // This function is creating a transaction signer.

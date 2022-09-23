@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,7 +18,7 @@ import (
 
 // ======================================================================================================
 // NOTE: This BDD test is not implemented to cover all edgecases , refer table driven tests for complete
-// test coverage, tests here are mainly for showcasing purpose these needs to be enhanced or merged along
+// test coverage, tests here are mainly for showcasing purpose these needs to be refactored or merged along
 // with table driven test ideas to get complete coverage
 // ======================================================================================================
 
@@ -55,7 +58,7 @@ var _ = Describe("Testing Contract", func() {
 		})
 	})
 
-	Context("Test Read function", func() {
+	Context("Test CheckBal function", func() {
 		var instanceMock *contract.MockIGoldcoin
 		//TODO: at this point this is not really needed implementing just for testing purpose
 		BeforeEach(func() {
@@ -64,20 +67,73 @@ var _ = Describe("Testing Contract", func() {
 		})
 
 		It("Check successful execution of Read function", func() {
-			instanceMock.EXPECT().Symbol(&bind.CallOpts{}).Return("GLD", nil)
 			instanceMock.EXPECT().BalanceOf(&bind.CallOpts{}, testAddr).Return(testBalance, nil)
 
-			symbol, bal, err := c.Read(instanceMock)
+			bal, err := c.CheckBal(instanceMock, "")
 
 			balCheck := bal.Cmp(testBalance)
 			Expect(err).To(BeNil())
-			Expect(symbol).To(Equal("GLD"))
 			Expect(balCheck).To(Equal(0))
 		})
 
 		It("Check Error getting Symbol", func() {
-			instanceMock.EXPECT().Symbol(&bind.CallOpts{}).Return("", errors.New("error"))
-			_, _, err := c.Read(instanceMock)
+			instanceMock.EXPECT().BalanceOf(&bind.CallOpts{}, testAddr).Return(nil, errors.New("error"))
+			_, err := c.CheckBal(instanceMock, "")
+
+			Expect(err).ToNot(BeNil())
+		})
+	})
+
+	Context("Test Reciept function", func() {
+		It("Check successful execution of Reciept function", func() {
+			const txHex = "0x3a33a98d6eb8d2b0e2a0fd1f4cf9d071992cbb0cc4e0e9887711dde505259e9b"
+			os.Setenv("CONTRACT_HASH", txHex)
+			defer os.Unsetenv("CONTRACT_HASH")
+
+			clientMock.EXPECT().TransactionReceipt(context.Background(), gomock.Any()).Return(&types.Receipt{
+				TxHash: common.HexToHash(txHex),
+			}, nil)
+
+			r, err := c.Reciept()
+
+			Expect(err).To(BeNil())
+			Expect(r).NotTo(BeNil())
+		})
+
+		It("Check Error getting Reciept", func() {
+			clientMock.EXPECT().TransactionReceipt(context.Background(), gomock.Any()).Return(nil, errors.New("error"))
+
+			_, err := c.Reciept()
+
+			Expect(err).ToNot(BeNil())
+		})
+	})
+
+	Context("Test TransferToken function", func() {
+		It("Check successful execution of transfertoken function", func() {
+			instanceMock := contract.NewMockIGoldcoin(ctrl)
+
+			clientMock.EXPECT().ChainID(context.Background()).Return(big.NewInt(001), nil)
+			clientMock.EXPECT().SuggestGasPrice(context.Background()).Return(big.NewInt(1000), nil)
+			clientMock.EXPECT().PendingNonceAt(context.Background(), gomock.Any()).Return(uint64(1), nil)
+			clientMock.EXPECT().EstimateGas(context.Background(), gomock.Any()).Return(uint64(100), nil)
+			instanceMock.EXPECT().Transfer(gomock.Any(), gomock.Any(), gomock.Any()).Return(&types.Transaction{}, nil)
+
+			tx, err := c.TransferTokens(instanceMock, "0x4592d8f8d7b001e72cb26a73e4fa1806a51ac79d", "100")
+
+			Expect(err).To(BeNil())
+			Expect(tx).ToNot(BeNil())
+		})
+
+		It("Invalid Amount Error", func() {
+			instanceMock := contract.NewMockIGoldcoin(ctrl)
+
+			clientMock.EXPECT().ChainID(context.Background()).Return(big.NewInt(001), nil)
+			clientMock.EXPECT().SuggestGasPrice(context.Background()).Return(big.NewInt(1000), nil)
+			clientMock.EXPECT().PendingNonceAt(context.Background(), gomock.Any()).Return(uint64(1), nil)
+			clientMock.EXPECT().EstimateGas(context.Background(), gomock.Any()).Return(uint64(100), nil)
+
+			_, err := c.TransferTokens(instanceMock, "0x4592d8f8d7b001e72cb26a73e4fa1806a51ac79d", "XXXX")
 
 			Expect(err).ToNot(BeNil())
 		})

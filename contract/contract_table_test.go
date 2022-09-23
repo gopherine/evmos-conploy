@@ -19,7 +19,7 @@ import (
 // `TestDeploy` is a test function that tests the `Deploy` function
 func (ts *TableSuite) TestDeploy() {
 	// Setting a mock environment variable for testing.
-	os.Setenv("OWNER_PRIVATEKEY", "b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	os.Setenv("OWNER_PRIVATEKEY", testKeyStr)
 	defer os.Unsetenv("OWNER_PRIVATEKEY")
 	// Mock deploy function that returns a `common.Address`, a `*types.Transaction`, a `*goldcoin.Goldcoin` and an
 	// `error`.
@@ -150,10 +150,10 @@ func (ts *TableSuite) TestDeploy() {
 	}
 }
 
-// A test function that tests the `Read` function.
-func (ts *TableSuite) TestRead() {
+// A test function that tests the `CheckBal` function.
+func (ts *TableSuite) TestCheckBal() {
 	// Setting a mock environment variable for testing.
-	os.Setenv("OWNER_PRIVATEKEY", "b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	os.Setenv("OWNER_PRIVATEKEY", testKeyStr)
 	defer os.Unsetenv("OWNER_PRIVATEKEY")
 
 	subtests := []struct {
@@ -164,22 +164,13 @@ func (ts *TableSuite) TestRead() {
 		{
 			name: "Read from instance and get symbol and balance",
 			prepare: func(m *contract.MockIGoldcoin) {
-				m.EXPECT().Symbol(&bind.CallOpts{}).Return("GLD", nil)
 				m.EXPECT().BalanceOf(&bind.CallOpts{}, testAddr).Return(testBalance, nil)
 			},
 			wantErr: false,
 		},
 		{
-			name: "Error Symbol",
-			prepare: func(m *contract.MockIGoldcoin) {
-				m.EXPECT().Symbol(&bind.CallOpts{}).Return("", errors.New("error"))
-			},
-			wantErr: true,
-		},
-		{
 			name: "Error Balanceof",
 			prepare: func(m *contract.MockIGoldcoin) {
-				m.EXPECT().Symbol(&bind.CallOpts{}).Return("GLD", nil)
 				m.EXPECT().BalanceOf(&bind.CallOpts{}, testAddr).Return(nil, errors.New("error"))
 			},
 			wantErr: true,
@@ -194,20 +185,17 @@ func (ts *TableSuite) TestRead() {
 
 	for _, tt := range subtests {
 		ts.Run(tt.name, func() {
-			// Creating a mock instance of the `IGoldcoin` interface.
-			instanceMock := contract.NewMockIGoldcoin(ts.Ctrl)
 			if tt.prepare != nil {
 				// m.Expect expects only successful calls any subsequent calls post a returning error will panic
 				// hence this functions helps in presetting such explicit requirement for each edgecase
-				tt.prepare(instanceMock)
+				tt.prepare(ts.GoldcoinMock)
 			}
 
-			symbol, bal, err := ts.Contract.Read(instanceMock)
+			bal, err := ts.Contract.CheckBal(ts.GoldcoinMock, "")
 
 			if (err != nil) != tt.wantErr {
-				ts.Errorf(err, "Expected error got nil")
+				ts.Errorf(err, "Unexpected Result")
 			} else if !tt.wantErr {
-				assert.Equal(ts.T(), "GLD", symbol)
 				assert.True(ts.T(), bal.Cmp(testBalance) == 0)
 			}
 		})
@@ -233,6 +221,127 @@ func (ts *TableSuite) TestLoad() {
 
 			instance := ts.Contract.Load()
 			assert.NotNil(ts.T(), instance)
+		})
+	}
+}
+
+// This function is testing the `Reciept` function.
+func (ts *TableSuite) TestReciept() {
+	const txHex = "0x3a33a98d6eb8d2b0e2a0fd1f4cf9d071992cbb0cc4e0e9887711dde505259e9b"
+	os.Setenv("CONTRACT_HASH", txHex)
+	defer os.Unsetenv("CONTRACT_HASH")
+
+	subtests := []struct {
+		name    string
+		prepare func(m *contract.MockIBlockchain)
+		wantErr bool
+	}{
+		{
+			name: "Successfully generate reciept",
+			prepare: func(m *contract.MockIBlockchain) {
+				m.EXPECT().TransactionReceipt(ts.Ctx, gomock.Any()).Return(&types.Receipt{
+					TxHash: common.HexToHash(txHex),
+				}, nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error generating reciept",
+			prepare: func(m *contract.MockIBlockchain) {
+				os.Setenv("CONTRACT_HASH", "INVALID_HASH")
+				ts.ClientMock.EXPECT().TransactionReceipt(ts.Ctx, gomock.Any()).Return(nil, errors.New("error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range subtests {
+		ts.Run(tt.name, func() {
+			if tt.prepare != nil {
+				tt.prepare(ts.ClientMock)
+			}
+
+			r, err := ts.Contract.Reciept()
+
+			if (err != nil) != tt.wantErr {
+				ts.Errorf(err, "Unexpected Result")
+			} else if !tt.wantErr {
+				assert.Equal(ts.T(), common.HexToHash(txHex), r.TxHash)
+				ts.NoError(err)
+			}
+		})
+	}
+}
+
+func (ts *TableSuite) TestTransferTokens() {
+	// Setting a mock environment variable for testing.
+	os.Setenv("OWNER_PRIVATEKEY", testKeyStr)
+	defer os.Unsetenv("OWNER_PRIVATEKEY")
+
+	subTests := []struct {
+		name    string
+		wantErr bool
+		amount  string
+		prepare func(m *contract.MockIBlockchain, mg *contract.MockIGoldcoin)
+	}{
+		{
+			name:    "Transfer token successfully",
+			wantErr: false,
+			amount:  "100",
+			prepare: func(m *contract.MockIBlockchain, mg *contract.MockIGoldcoin) {
+				m.EXPECT().ChainID(context.Background()).Return(big.NewInt(001), nil)
+				m.EXPECT().SuggestGasPrice(context.Background()).Return(big.NewInt(1000), nil)
+				m.EXPECT().PendingNonceAt(context.Background(), gomock.Any()).Return(uint64(1), nil)
+				m.EXPECT().EstimateGas(context.Background(), gomock.Any()).Return(uint64(100), nil)
+				mg.EXPECT().Transfer(gomock.Any(), gomock.Any(), gomock.Any()).Return(&types.Transaction{}, nil)
+			},
+		}, {
+			name:    "Error transfer",
+			wantErr: false,
+			amount:  "100",
+			prepare: func(m *contract.MockIBlockchain, mg *contract.MockIGoldcoin) {
+				m.EXPECT().ChainID(context.Background()).Return(big.NewInt(001), nil)
+				m.EXPECT().SuggestGasPrice(context.Background()).Return(big.NewInt(1000), nil)
+				m.EXPECT().PendingNonceAt(context.Background(), gomock.Any()).Return(uint64(1), nil)
+				m.EXPECT().EstimateGas(context.Background(), gomock.Any()).Return(uint64(100), nil)
+				mg.EXPECT().Transfer(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+			},
+		}, {
+			name:    "Error Invalid Amount",
+			wantErr: false,
+			amount:  "INVALID",
+			prepare: func(m *contract.MockIBlockchain, mg *contract.MockIGoldcoin) {
+				m.EXPECT().ChainID(context.Background()).Return(big.NewInt(001), nil)
+				m.EXPECT().SuggestGasPrice(context.Background()).Return(big.NewInt(1000), nil)
+				m.EXPECT().PendingNonceAt(context.Background(), gomock.Any()).Return(uint64(1), nil)
+				m.EXPECT().EstimateGas(context.Background(), gomock.Any()).Return(uint64(100), nil)
+			},
+		}, {
+			name:   "Error ChainID",
+			amount: "100",
+			prepare: func(m *contract.MockIBlockchain, mg *contract.MockIGoldcoin) {
+				m.EXPECT().ChainID(context.Background()).Return(nil, errors.New("chain id error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range subTests {
+		ts.Run(tt.name, func() {
+			if tt.prepare != nil {
+				tt.prepare(ts.ClientMock, ts.GoldcoinMock)
+			}
+
+			tx, err := ts.Contract.TransferTokens(ts.GoldcoinMock, "0x4592d8f8d7b001e72cb26a73e4fa1806a51ac79d", tt.amount)
+
+			if (err != nil) != tt.wantErr {
+				ts.Errorf(err, "Unexpected Result")
+			} else if tt.wantErr {
+				assert.Error(ts.T(), err)
+			} else {
+				assert.NotNil(ts.T(), tx)
+				assert.NoError(ts.T(), err)
+			}
 		})
 	}
 }

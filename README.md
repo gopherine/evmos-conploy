@@ -54,10 +54,11 @@ having any method to persist those.Thus, save it in .env under CONTRACT_HASH and
 make deploy
 # Check if the contract is deployed successfully
 make check
-# Query smart contract
-make read
-# Transact tokens from owner_address to reciever_address
-make transact from=FROMADDRESS to=RECIEVER_ADDRESS
+# Query smart contract to get balance when given no arguments it returns owner_address balance
+make balanceOf
+make balanceOf address=SOME_ADDRESS
+# Transact tokens from owner_address to reciever_address with supplied amount
+make transfer amount=AMOUNT to=RECIEVER_ADDRESS
 ```
 
 ## Testing
@@ -84,3 +85,7 @@ make test
 
 ## To Do
 
+[] Refactor tests, add more bdd test cases currently only important testcases are covered
+[] Add a persistant storage to keep track of contract address and txhash
+[] Have a way to manually create and generate validator address with given private key, this will ensure consistency when the node restarts
+[] currently with simulated backend we do not test all the generated functions, ensure most of the key functions are tested.

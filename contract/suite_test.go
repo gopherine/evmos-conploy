@@ -22,14 +22,16 @@ import (
 type TableSuite struct {
 	*suite.Suite
 	*contract.Contract
-	ClientMock *contract.MockIBlockchain
-	Ctrl       *gomock.Controller
-	Ctx        context.Context
+	GoldcoinMock *contract.MockIGoldcoin
+	ClientMock   *contract.MockIBlockchain
+	Ctrl         *gomock.Controller
+	Ctx          context.Context
 }
 
 // Creating a test account with a balance of 2e15
 var (
-	testKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	testKeyStr  = "b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291"
+	testKey, _  = crypto.HexToECDSA(testKeyStr)
 	testAddr    = crypto.PubkeyToAddress(testKey.PublicKey)
 	testBalance = big.NewInt(2e15)
 )
@@ -55,14 +57,18 @@ func TestTableSuite(t *testing.T) {
 
 	// Creating a mock instance of the `IBlockchain` interface.
 	clientMock := contract.NewMockIBlockchain(ctrl)
-	contract := contract.NewContract(clientMock)
+	contractInstance := contract.NewContract(clientMock)
+
+	// Creating a mock instance of the `IGoldcoin` interface.
+	goldcoinMock := contract.NewMockIGoldcoin(ctrl)
 
 	suite.Run(t, &TableSuite{
-		Suite:      new(suite.Suite),
-		Contract:   contract,
-		ClientMock: clientMock,
-		Ctx:        context.Background(),
-		Ctrl:       ctrl,
+		Suite:        new(suite.Suite),
+		Contract:     contractInstance,
+		ClientMock:   clientMock,
+		GoldcoinMock: goldcoinMock,
+		Ctx:          context.Background(),
+		Ctrl:         ctrl,
 	})
 }
 

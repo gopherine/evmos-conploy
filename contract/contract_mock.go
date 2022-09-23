@@ -301,19 +301,19 @@ func (m *MockIGoldcoin) EXPECT() *MockIGoldcoinMockRecorder {
 	return m.recorder
 }
 
-// Symbol mocks base method
-func (m *MockIGoldcoin) Symbol(opts *bind.CallOpts) (string, error) {
+// Transfer mocks base method
+func (m *MockIGoldcoin) Transfer(opts *bind.TransactOpts, to common.Address, amount *big.Int) (*types.Transaction, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Symbol", opts)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "Transfer", opts, to, amount)
+	ret0, _ := ret[0].(*types.Transaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Symbol indicates an expected call of Symbol
-func (mr *MockIGoldcoinMockRecorder) Symbol(opts interface{}) *gomock.Call {
+// Transfer indicates an expected call of Transfer
+func (mr *MockIGoldcoinMockRecorder) Transfer(opts, to, amount interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Symbol", reflect.TypeOf((*MockIGoldcoin)(nil).Symbol), opts)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transfer", reflect.TypeOf((*MockIGoldcoin)(nil).Transfer), opts, to, amount)
 }
 
 // BalanceOf mocks base method

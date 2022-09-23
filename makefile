@@ -20,12 +20,12 @@ build:
 # run cli app
 deploy:
 	- ./bin/conploy -d
-check:
-	- ./bin/conploy -c
-read:
+reciept:
 	- ./bin/conploy -r
-transact:
-	- ./bin/conploy -t $(from) $(to)
+balanceOf:
+	- ./bin/conploy -b $(address)
+transfer:
+	- ./bin/conploy -t $(amount) $(to)
 
 # generate mocks
 # contract mock
