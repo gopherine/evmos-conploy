@@ -47,7 +47,7 @@ convinience here. If you would like to build and trigger manually you can
 do that as well.
 
 NOTE: After deployment you will get TxHash and Address for the contract that was deployed on the chain, for now we are not
-having any method to persist those.Thus, save it in .env under CONTRACT_HASH and CONTRACT_HASH respectively.
+having any method to persist those.Thus, save it in .env under CONTRACT_HASH and CONTRACT_ADDRESS respectively.
 
 ```
 # Deploy contract
